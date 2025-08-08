@@ -73,40 +73,5 @@ app.listen(PORT, () => {
   console.log(`API escuchando en puerto ${PORT}`);
 });
 
-
-
-
-// Obtener tokens con estado = 1 (pendientes)
-app.get('/tokens/pending', async (req, res) => {
-  try {
-    const [rows] = await pool.query('SELECT * FROM token WHERE tok_estado = 1');
-    res.json({ success: true, tokens: rows });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ success: false, message: 'Error al obtener tokens' });
-  }
-});
-
-
-// Actualizar estado del token (aprobar o rechazar)
-app.put('/tokens/:id', async (req, res) => {
-  const { id } = req.params;
-  const { estado } = req.body; // debe ser 0 para aprobado o rechazado según convenga
-
-  if (estado === undefined) {
-    return res.status(400).json({ success: false, message: 'Estado requerido' });
-  }
-
-  try {
-    const [result] = await pool.query('UPDATE token SET tok_estado = ? WHERE tok_id = ?', [estado, id]);
-    
-    if (result.affectedRows === 0) {
-      return res.status(404).json({ success: false, message: 'Token no encontrado' });
-    }
-
-    res.json({ success: true, message: 'Estado actualizado' });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ success: false, message: 'Error al actualizar token' });
-  }
-});
+const tokenRoutes = require('./token.routes');
+app.use('/api', tokenRoutes);
