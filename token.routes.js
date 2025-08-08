@@ -29,7 +29,7 @@ router.get('/tokens', async (req, res) => {
 router.put('/tokens/:id/aprobar', async (req, res) => {
   const { id } = req.params;
   try {
-    await pool.query('UPDATE token SET tok_estado = 0 WHERE tok_id = ?', [id]);
+    await pool.query('UPDATE token SET tok_estado = 2 WHERE tok_id = ?', [id]);
     res.json({ success: true, message: 'Token aprobado' });
   } catch (error) {
     console.error(error);
