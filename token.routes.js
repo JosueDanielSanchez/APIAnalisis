@@ -1,9 +1,20 @@
-// token.routes.js
 const express = require('express');
 const router = express.Router();
-const pool = require('./db'); // conexión exportada desde otro archivo o usa el pool directamente aquí
+const mysql = require('mysql2/promise');
 
-// Obtener tokens pendientes (estado = 1)
+// Creamos la conexión directamente aquí, sin importar ningún archivo externo
+const pool = mysql.createPool({
+  host: process.env.DB_HOST,
+  port: process.env.DB_PORT,
+  user: process.env.DB_USER,
+  password: process.env.DB_PASSWORD,
+  database: process.env.DB_NAME,
+  waitForConnections: true,
+  connectionLimit: 10,
+  queueLimit: 0
+});
+
+// Obtener tokens con estado 1
 router.get('/tokens', async (req, res) => {
   try {
     const [rows] = await pool.query('SELECT * FROM token WHERE tok_estado = 1');
@@ -14,7 +25,7 @@ router.get('/tokens', async (req, res) => {
   }
 });
 
-// Aprobar token (cambiar estado a 0)
+// Aprobar un token
 router.put('/tokens/:id/aprobar', async (req, res) => {
   const { id } = req.params;
   try {
@@ -26,7 +37,7 @@ router.put('/tokens/:id/aprobar', async (req, res) => {
   }
 });
 
-// Rechazar token (opcional: eliminar o cambiar estado a otro valor, como 2)
+// Rechazar un token (opcional: eliminar o cambiar a estado 2)
 router.put('/tokens/:id/rechazar', async (req, res) => {
   const { id } = req.params;
   try {
