@@ -18,21 +18,22 @@ const pool = mysql.createPool({
 router.get('/tokens', async (req, res) => {
   try {
     const [rows] = await pool.query(`
-      SELECT 
-        t.tok_id,
-        t.tok_codigo,
-        t.tok_fecha_creacion,
-        v.codigo AS venta_codigo,
-        v.fecha AS venta_fecha,
-        p.descripcion AS producto,
-        vp.cantidad
-      FROM token t
-      LEFT JOIN autorizacion a ON a.aut_tok_id = t.tok_id
-      LEFT JOIN ventas v ON v.id = a.aut_ventas_id
-      LEFT JOIN productos p ON p.id = a.aut_pro_codigo
-      LEFT JOIN venta_productos vp 
-             ON vp.id_venta = v.id AND vp.id_producto = p.id
-      WHERE t.tok_estado = 1
+SELECT 
+  t.tok_id,
+  t.tok_codigo,
+  t.tok_fecha_creacion,
+  v.codigo AS venta_codigo,
+  v.fecha AS venta_fecha,
+  p.descripcion AS producto,
+  vp.cantidad
+FROM token t
+INNER JOIN autorizacion a ON a.aut_tok_id = t.tok_id
+INNER JOIN ventas v ON v.id = a.aut_ventas_id
+INNER JOIN productos p ON p.id = a.aut_pro_codigo
+LEFT JOIN venta_productos vp 
+       ON vp.id_venta = v.id AND vp.id_producto = p.id
+WHERE t.tok_estado = 1;
+
     `);
 
     res.json(rows);
