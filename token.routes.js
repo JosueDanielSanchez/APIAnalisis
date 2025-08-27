@@ -15,34 +15,29 @@ const pool = mysql.createPool({
 });
 
 // Obtener tokens con estado 1, incluyendo venta, producto y cantidad
-router.get('/tokens', async (req, res) => {
+router.get('/ventas', async (req, res) => {
   try {
     const [rows] = await pool.query(`
-SELECT 
-  t.tok_id,
-  t.tok_codigo,
-  t.tok_fecha_creacion,
-  v.codigo AS venta_codigo,
-  v.fecha AS venta_fecha,
-  p.descripcion AS producto,
-  vp.cantidad
-FROM token t
-INNER JOIN autorizacion a ON a.aut_tok_id = t.tok_id
-INNER JOIN ventas v ON v.id = a.aut_ventas_id
-INNER JOIN productos p ON p.id = a.aut_pro_codigo
-LEFT JOIN venta_productos vp 
-       ON vp.id_venta = v.id AND vp.id_producto = p.id
-WHERE t.tok_estado = 1;
-
+      SELECT 
+        v.id AS venta_id,
+        v.codigo AS venta_codigo,
+        v.fecha AS venta_fecha,
+        p.descripcion AS producto,
+        vp.cantidad
+      FROM ventas v
+      INNER JOIN venta_productos vp ON vp.id_venta = v.id
+      INNER JOIN productos p ON p.id = vp.id_producto
+      ORDER BY v.fecha DESC
     `);
 
     res.json(rows);
   } catch (error) {
     console.error(error);
-    res.status(500).json({ message: 'Error al obtener tokens con ventas y productos' });
+    res.status(500).json({ message: 'Error al obtener ventas con productos' });
   }
 });
 
+module.exports = router;
 
 // Aprobar un token
 router.put('/tokens/:id/aprobar', async (req, res) => {
