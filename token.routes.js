@@ -2,7 +2,6 @@ const express = require('express');
 const router = express.Router();
 const mysql = require('mysql2/promise');
 
-// Creamos la conexión directamente aquí, sin importar ningún archivo externo
 const pool = mysql.createPool({
   host: process.env.DB_HOST,
   port: process.env.DB_PORT,
@@ -14,7 +13,9 @@ const pool = mysql.createPool({
   queueLimit: 0
 });
 
-// Obtener tokens con estado 1, incluyendo venta, producto y cantidad
+// ========================
+// Obtener ventas con productos y cantidad
+// ========================
 router.get('/ventas', async (req, res) => {
   try {
     const [rows] = await pool.query(`
@@ -29,7 +30,6 @@ router.get('/ventas', async (req, res) => {
       INNER JOIN productos p ON p.id = vp.id_producto
       ORDER BY v.fecha DESC
     `);
-
     res.json(rows);
   } catch (error) {
     console.error(error);
@@ -37,9 +37,9 @@ router.get('/ventas', async (req, res) => {
   }
 });
 
-module.exports = router;
-
+// ========================
 // Aprobar un token
+// ========================
 router.put('/tokens/:id/aprobar', async (req, res) => {
   const { id } = req.params;
   try {
@@ -51,7 +51,9 @@ router.put('/tokens/:id/aprobar', async (req, res) => {
   }
 });
 
-// Rechazar un token (opcional: eliminar o cambiar a estado 2)
+// ========================
+// Rechazar un token
+// ========================
 router.put('/tokens/:id/rechazar', async (req, res) => {
   const { id } = req.params;
   try {
