@@ -14,7 +14,7 @@ const pool = mysql.createPool({
   queueLimit: 0
 });
 
-// Obtener tokens con estado 1, pero ahora mostrando datos de la venta
+// Obtener tokens con estado 1, incluyendo venta, producto y cantidad
 router.get('/tokens', async (req, res) => {
   try {
     const [rows] = await pool.query(`
@@ -22,8 +22,9 @@ router.get('/tokens', async (req, res) => {
         t.tok_id,
         t.tok_codigo,
         t.tok_fecha_creacion,
+        v.id AS venta_id,
         v.codigo AS venta_codigo,
-        v.\`fecha\` AS venta_fecha,
+        v.fecha AS venta_fecha,
         p.descripcion AS producto,
         vp.cantidad
       FROM token t
@@ -35,12 +36,10 @@ router.get('/tokens', async (req, res) => {
 
     res.json(rows);
   } catch (error) {
-    console.error('Error en consulta /tokens:', error);
+    console.error(error);
     res.status(500).json({ message: 'Error al obtener tokens con ventas' });
   }
 });
-
-
 
 
 // Aprobar un token
