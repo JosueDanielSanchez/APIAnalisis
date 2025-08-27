@@ -27,18 +27,21 @@ router.get('/tokens', async (req, res) => {
         p.descripcion AS producto,
         vp.cantidad
       FROM token t
-      LEFT JOIN ventas v ON v.codigo = t.tok_codigo
-      LEFT JOIN venta_productos vp ON vp.id_venta = v.id
-      LEFT JOIN productos p ON p.id = vp.id_producto
+      INNER JOIN autorizacion a ON a.aut_tok_id = t.tok_id
+      INNER JOIN ventas v ON v.id = a.aut_ventas_id
+      INNER JOIN productos p ON p.id = a.aut_pro_codigo
+      LEFT JOIN venta_productos vp 
+             ON vp.id_venta = v.id AND vp.id_producto = p.id
       WHERE t.tok_estado = 1
     `);
 
     res.json(rows);
   } catch (error) {
     console.error(error);
-    res.status(500).json({ message: 'Error al obtener tokens con ventas' });
+    res.status(500).json({ message: 'Error al obtener tokens con ventas y productos' });
   }
 });
+
 
 
 // Aprobar un token
