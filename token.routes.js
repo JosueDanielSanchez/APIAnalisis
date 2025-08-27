@@ -27,7 +27,7 @@ router.get('/tokens', async (req, res) => {
         p.descripcion AS producto,
         vp.cantidad
       FROM token t
-      LEFT JOIN ventas v ON v.codigo = t.tok_codigo
+LEFT JOIN ventas v ON v.codigo = CAST(t.tok_codigo AS CHAR)
       LEFT JOIN venta_productos vp ON vp.id_venta = v.id
       LEFT JOIN productos p ON p.id = vp.id_producto
       WHERE t.tok_estado = 1
