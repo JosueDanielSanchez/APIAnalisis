@@ -23,11 +23,11 @@ router.get('/tokens', async (req, res) => {
         t.tok_codigo,
         t.tok_fecha_creacion,
         v.codigo AS venta_codigo,
-        v.fecha AS venta_fecha,
+        v.\`fecha\` AS venta_fecha,
         p.descripcion AS producto,
         vp.cantidad
       FROM token t
-LEFT JOIN ventas v ON v.codigo = CAST(t.tok_codigo AS CHAR)
+      LEFT JOIN ventas v ON v.codigo = CAST(t.tok_codigo AS CHAR)
       LEFT JOIN venta_productos vp ON vp.id_venta = v.id
       LEFT JOIN productos p ON p.id = vp.id_producto
       WHERE t.tok_estado = 1
@@ -35,10 +35,11 @@ LEFT JOIN ventas v ON v.codigo = CAST(t.tok_codigo AS CHAR)
 
     res.json(rows);
   } catch (error) {
-    console.error(error);
+    console.error('Error en consulta /tokens:', error);
     res.status(500).json({ message: 'Error al obtener tokens con ventas' });
   }
 });
+
 
 
 
