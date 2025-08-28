@@ -27,6 +27,7 @@ router.get('/tokens', async (req, res) => {
         v.codigo AS venta_codigo,
         v.fecha AS venta_fecha,
         p.descripcion AS producto,
+        vp.id AS id_venta_producto,   -- 🔥 ESTE FALTABA
         vp.cantidad
       FROM token t
       INNER JOIN ventas v ON v.id = t.id_venta
@@ -111,5 +112,29 @@ router.put('/tokens/:id/cantidad', async (req, res) => {
     res.status(500).json({ message: 'Error al actualizar la cantidad' });
   }
 });
+
+
+
+router.put('/venta-productos/:id/cantidad', async (req, res) => {
+  const { id } = req.params;
+  const { cantidad } = req.body;
+
+  if (!cantidad || cantidad <= 0) {
+    return res.status(400).json({ message: 'Cantidad inválida' });
+  }
+
+  try {
+    await pool.query(
+      `UPDATE venta_productos SET cantidad = ? WHERE id = ?`,
+      [cantidad, id]
+    );
+
+    res.json({ success: true, message: 'Cantidad actualizada correctamente' });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Error al actualizar la cantidad' });
+  }
+});
+
 
 module.exports = router;
