@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const mysql = require('mysql2/promise');
 
+// Creamos la conexión directamente aquí, sin importar ningún archivo externo
 const pool = mysql.createPool({
   host: process.env.DB_HOST,
   port: process.env.DB_PORT,
@@ -13,33 +14,34 @@ const pool = mysql.createPool({
   queueLimit: 0
 });
 
-// ========================
-// Obtener ventas con productos y cantidad
-// ========================
-router.get('/ventas', async (req, res) => {
+// Obtener tokens con estado 1, incluyendo venta, producto y cantidad
+router.get('/tokens', async (req, res) => {
   try {
     const [rows] = await pool.query(`
       SELECT 
-        v.id AS venta_id,
+        t.tok_id,
+        t.tok_codigo,
+        t.tok_fecha_creacion,
         v.codigo AS venta_codigo,
         v.fecha AS venta_fecha,
         p.descripcion AS producto,
         vp.cantidad
-      FROM ventas v
-      INNER JOIN venta_productos vp ON vp.id_venta = v.id
-      INNER JOIN productos p ON p.id = vp.id_producto
-      ORDER BY v.fecha DESC
+      FROM token t
+      LEFT JOIN ventas v ON v.codigo = t.tok_codigo
+      LEFT JOIN venta_productos vp ON vp.id_venta = v.id
+      LEFT JOIN productos p ON p.id = vp.id_producto
+      WHERE t.tok_estado = 1
     `);
+
     res.json(rows);
   } catch (error) {
     console.error(error);
-    res.status(500).json({ message: 'Error al obtener ventas con productos' });
+    res.status(500).json({ message: 'Error al obtener tokens con ventas' });
   }
 });
 
-// ========================
+
 // Aprobar un token
-// ========================
 router.put('/tokens/:id/aprobar', async (req, res) => {
   const { id } = req.params;
   try {
@@ -51,9 +53,7 @@ router.put('/tokens/:id/aprobar', async (req, res) => {
   }
 });
 
-// ========================
-// Rechazar un token
-// ========================
+// Rechazar un token (opcional: eliminar o cambiar a estado 2)
 router.put('/tokens/:id/rechazar', async (req, res) => {
   const { id } = req.params;
   try {
