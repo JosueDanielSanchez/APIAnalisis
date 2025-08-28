@@ -44,18 +44,43 @@ router.get('/tokens', async (req, res) => {
 });
 
 // =====================
-// Aprobar un token
+// Aprobar un token y actualizar cantidad
 // =====================
 router.put('/tokens/:id/aprobar', async (req, res) => {
-  const { id } = req.params;
+  const { id } = req.params; // id del token
+  const { cantidad } = req.body; // cantidad enviada desde la app (opcional)
+
   try {
+    // Si se envió una nueva cantidad, actualizarla en venta_productos
+    if (cantidad && cantidad > 0) {
+      const [rows] = await pool.query(
+        `SELECT vp.id AS id_venta_producto
+         FROM token t
+         INNER JOIN ventas v ON v.id = t.id_venta
+         INNER JOIN venta_productos vp ON vp.id_venta = v.id
+         WHERE t.tok_id = ?`,
+        [id]
+      );
+
+      if (rows.length > 0) {
+        const idVentaProducto = rows[0].id_venta_producto;
+        await pool.query(
+          `UPDATE venta_productos SET cantidad = ? WHERE id = ?`,
+          [cantidad, idVentaProducto]
+        );
+      }
+    }
+
+    // Cambiar estado del token a aprobado
     await pool.query('UPDATE token SET tok_estado = 2 WHERE tok_id = ?', [id]);
-    res.json({ success: true, message: 'Token aprobado' });
+
+    res.json({ success: true, message: 'Token aprobado y cantidad actualizada' });
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: 'Error al aprobar token' });
   }
 });
+
 
 // =====================
 // Rechazar un token
