@@ -14,9 +14,7 @@ const pool = mysql.createPool({
   queueLimit: 0
 });
 
-// =====================
-// Obtener tokens pendientes (estado = 1)
-// =====================
+// Obtener tokens con estado 1, incluyendo venta, producto y cantidad
 router.get('/tokens', async (req, res) => {
   try {
     const [rows] = await pool.query(`
@@ -43,48 +41,22 @@ router.get('/tokens', async (req, res) => {
   }
 });
 
-// =====================
-// Aprobar un token y actualizar cantidad
-// =====================
+
+
+
+// Aprobar un token
 router.put('/tokens/:id/aprobar', async (req, res) => {
-  const { id } = req.params; // id del token
-  const { cantidad } = req.body; // cantidad enviada desde la app (opcional)
-
+  const { id } = req.params;
   try {
-    // Si se envió una nueva cantidad, actualizarla en venta_productos
-    if (cantidad && cantidad > 0) {
-      const [rows] = await pool.query(
-        `SELECT vp.id AS id_venta_producto
-         FROM token t
-         INNER JOIN ventas v ON v.id = t.id_venta
-         INNER JOIN venta_productos vp ON vp.id_venta = v.id
-         WHERE t.tok_id = ?`,
-        [id]
-      );
-
-      if (rows.length > 0) {
-        const idVentaProducto = rows[0].id_venta_producto;
-        await pool.query(
-          `UPDATE venta_productos SET cantidad = ? WHERE id = ?`,
-          [cantidad, idVentaProducto]
-        );
-      }
-    }
-
-    // Cambiar estado del token a aprobado
     await pool.query('UPDATE token SET tok_estado = 2 WHERE tok_id = ?', [id]);
-
-    res.json({ success: true, message: 'Token aprobado y cantidad actualizada' });
+    res.json({ success: true, message: 'Token aprobado' });
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: 'Error al aprobar token' });
   }
 });
 
-
-// =====================
-// Rechazar un token
-// =====================
+// Rechazar un token (opcional: eliminar o cambiar a estado 2)
 router.put('/tokens/:id/rechazar', async (req, res) => {
   const { id } = req.params;
   try {
@@ -93,47 +65,6 @@ router.put('/tokens/:id/rechazar', async (req, res) => {
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: 'Error al rechazar token' });
-  }
-});
-
-// =====================
-// Actualizar la cantidad de un producto asociado al token
-// =====================
-router.put('/tokens/:id/cantidad', async (req, res) => {
-  const { id } = req.params; // id del token
-  const { cantidad } = req.body; // nueva cantidad
-
-  if (!cantidad || cantidad <= 0) {
-    return res.status(400).json({ message: 'Cantidad inválida' });
-  }
-
-  try {
-    // Buscar el producto relacionado con el token
-    const [rows] = await pool.query(
-      `SELECT vp.id AS id_venta_producto
-       FROM token t
-       INNER JOIN ventas v ON v.id = t.id_venta
-       INNER JOIN venta_productos vp ON vp.id_venta = v.id
-       WHERE t.tok_id = ?`,
-      [id]
-    );
-
-    if (rows.length === 0) {
-      return res.status(404).json({ message: 'No se encontró el producto asociado a este token' });
-    }
-
-    const idVentaProducto = rows[0].id_venta_producto;
-
-    // Actualizar la cantidad en la tabla venta_productos
-    await pool.query(
-      `UPDATE venta_productos SET cantidad = ? WHERE id = ?`,
-      [cantidad, idVentaProducto]
-    );
-
-    res.json({ success: true, message: 'Cantidad actualizada correctamente' });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: 'Error al actualizar la cantidad' });
   }
 });
 
