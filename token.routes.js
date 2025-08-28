@@ -15,6 +15,7 @@ const pool = mysql.createPool({
 });
 
 // Obtener tokens con estado 1, incluyendo venta, producto y cantidad
+// Obtener tokens con estado 1, pero ahora mostrando datos de la venta
 router.get('/tokens', async (req, res) => {
   try {
     const [rows] = await pool.query(`
@@ -27,9 +28,9 @@ router.get('/tokens', async (req, res) => {
         p.descripcion AS producto,
         vp.cantidad
       FROM token t
-      LEFT JOIN ventas v ON v.codigo = t.tok_codigo
-      LEFT JOIN venta_productos vp ON vp.id_venta = v.id
-      LEFT JOIN productos p ON p.id = vp.id_producto
+      INNER JOIN ventas v ON v.codigo = t.tok_codigo
+      INNER JOIN venta_productos vp ON vp.id_venta = v.id
+      INNER JOIN productos p ON p.id = vp.id_producto
       WHERE t.tok_estado = 1
     `);
 
@@ -39,6 +40,7 @@ router.get('/tokens', async (req, res) => {
     res.status(500).json({ message: 'Error al obtener tokens con ventas' });
   }
 });
+
 
 
 // Aprobar un token
