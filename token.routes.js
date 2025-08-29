@@ -50,13 +50,34 @@ router.get('/tokens', async (req, res) => {
 router.put('/tokens/:id/aprobar', async (req, res) => {
   const { id } = req.params;
   try {
+    // Actualizamos el estado del token
     await pool.query('UPDATE token SET tok_estado = 2 WHERE tok_id = ?', [id]);
-    res.json({ success: true, message: 'Token aprobado' });
+
+    // Obtenemos los datos actualizados de la venta/producto
+    const [rows] = await pool.query(
+      `SELECT 
+         vp.id AS id_venta_producto,
+         vp.cantidad,
+         p.descripcion AS producto
+       FROM token t
+       INNER JOIN ventas v ON v.id = t.id_venta
+       INNER JOIN venta_productos vp ON vp.id_venta = v.id
+       INNER JOIN productos p ON p.id = vp.id_producto
+       WHERE t.tok_id = ?`,
+      [id]
+    );
+
+    res.json({
+      success: true,
+      message: 'Token aprobado',
+      data: rows[0] || null
+    });
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: 'Error al aprobar token' });
   }
 });
+
 
 // =====================
 // Rechazar un token
