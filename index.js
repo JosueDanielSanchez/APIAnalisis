@@ -75,3 +75,37 @@ app.listen(PORT, () => {
 
 const tokenRoutes = require('./token.routes');
 app.use('/api', tokenRoutes);
+
+
+const multer = require('multer');
+const upload = multer({ dest: 'uploads/' });
+const fs = require('fs');
+
+app.post('/verify-face', upload.single('photo'), async (req, res) => {
+  const { userId } = req.body;
+
+  try {
+    // Buscar usuario en BD
+    const [rows] = await pool.query('SELECT * FROM users WHERE id = ?', [userId]);
+    if (rows.length === 0) return res.status(404).json({ success: false, message: "Usuario no encontrado" });
+
+    const user = rows[0];
+
+    // Foto de la BD (guardada como base64 o ruta de archivo)
+    const dbPhotoPath = user.foto;
+
+    // Aquí deberías implementar comparación con face-api.js o un servicio externo
+    // De momento simulamos verificación:
+    const match = true; // Aquí va tu lógica real de comparación
+
+    if (match) {
+      return res.json({ success: true, message: "Rostro verificado" });
+    } else {
+      return res.status(401).json({ success: false, message: "No coincide con el rostro registrado" });
+    }
+
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ success: false, message: "Error en servidor" });
+  }
+});
