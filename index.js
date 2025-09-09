@@ -181,9 +181,11 @@ app.post('/verify-face', upload.single('photo'), async (req, res) => {
 
 // ------------------- Iniciar servidor -------------------
 const PORT = process.env.PORT || 3000;
+
+// 1️⃣ Levanta el servidor de inmediato
+app.listen(PORT, () => console.log(`🚀 Servidor corriendo en puerto ${PORT}`));
+
+// 2️⃣ Carga los modelos en segundo plano
 loadFaceModels()
-  .then(() => app.listen(PORT, () => console.log(`🚀 Servidor corriendo en puerto ${PORT}`)))
-  .catch(err => {
-    console.error('❌ No se pudieron cargar los modelos:', err);
-    process.exit(1);
-  });
+  .then(() => console.log('✅ Modelos cargados (segundo plano)'))
+  .catch(err => console.error('❌ Error cargando modelos:', err));
