@@ -5,15 +5,15 @@ const faceapi = require('face-api.js');
 async function loadModels() {
   try {
     if (process.env.NODE_ENV === 'production') {
-      // 🚀 Railway -> usar CDN
-      const MODEL_URL = 'https://cdn.jsdelivr.net/npm/face-api.js/models';
+      // 🚀 Railway -> cargar desde CDN
+      const MODEL_URL = 'https://justadudewhohacks.github.io/face-api.js/models';
       console.log('🔗 Cargando modelos desde CDN...');
 
-      await faceapi.nets.ssdMobilenetv1.loadFromUri(MODEL_URL + '/ssd_mobilenetv1');
-      await faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL + '/face_landmark_68');
-      await faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL + '/face_recognition');
+      await faceapi.nets.ssdMobilenetv1.loadFromUri(`${MODEL_URL}/ssd_mobilenetv1_model-weights_manifest.json`);
+      await faceapi.nets.faceLandmark68Net.loadFromUri(`${MODEL_URL}/face_landmark_68_model-weights_manifest.json`);
+      await faceapi.nets.faceRecognitionNet.loadFromUri(`${MODEL_URL}/face_recognition_model-weights_manifest.json`);
     } else {
-      // 💻 Local -> usar carpeta ./models
+      // 💻 Local -> cargar desde ./models
       const MODEL_PATH = path.join(__dirname, 'models');
       console.log('📂 Cargando modelos desde disco...');
 

@@ -3,7 +3,8 @@ const fs = require('fs');
 const path = require('path');
 const fetch = require('node-fetch');
 
-const MODEL_URL = 'https://cdn.jsdelivr.net/npm/face-api.js/models';
+// CDN funcional de los modelos
+const MODEL_URL = 'https://justadudewhohacks.github.io/face-api.js/models';
 
 const models = {
   ssd_mobilenetv1: [
@@ -39,7 +40,7 @@ async function downloadModels() {
       const filePath = path.join(dir, file);
       if (!fs.existsSync(filePath)) {
         console.log(`Descargando ${file}...`);
-        const url = `${MODEL_URL}/${modelName}/${file}`;
+        const url = `${MODEL_URL}/${file}`;
         try {
           await downloadFile(url, filePath);
         } catch (err) {
@@ -48,6 +49,11 @@ async function downloadModels() {
       }
     }
   }
+}
+
+// Para usarlo directamente: node downloadModels.js
+if (require.main === module) {
+  downloadModels().then(() => console.log('✅ Todos los modelos descargados')).catch(console.error);
 }
 
 module.exports = { downloadModels };

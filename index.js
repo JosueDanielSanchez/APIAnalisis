@@ -18,9 +18,8 @@ require('@tensorflow/tfjs');
 
 const faceapi = require('face-api.js');
 const canvas = require('canvas');
-const { Canvas, Image, ImageData } = canvas;
+const { Canvas, Image, ImageData, loadImage } = canvas;
 faceapi.env.monkeyPatch({ Canvas, Image, ImageData });
-const loadImage = canvas.loadImage;
 
 const app = express();
 app.use(cors());
@@ -39,20 +38,23 @@ const pool = mysql.createPool({
 });
 
 // ------------------- Multer -------------------
-const upload = multer({ dest: 'uploads/' });
+const UPLOAD_DIR = path.join(__dirname, 'uploads');
+if (!fs.existsSync(UPLOAD_DIR)) fs.mkdirSync(UPLOAD_DIR);
+
+const upload = multer({ dest: UPLOAD_DIR });
 
 // ------------------- Login -------------------
 app.post('/login', async (req, res) => {
   const { email, password } = req.body;
-  if (!email || !password) return res.status(400).json({ message: 'Email y contraseña son requeridos' });
+  if (!email || !password) return res.status(400).json({ success: false, message: 'Email y contraseña son requeridos' });
 
   try {
     const [rows] = await pool.query('SELECT * FROM users WHERE email = ?', [email]);
-    if (rows.length === 0) return res.status(401).json({ message: 'Credenciales incorrectas' });
+    if (rows.length === 0) return res.status(401).json({ success: false, message: 'Credenciales incorrectas' });
 
     const user = rows[0];
     const validPassword = await bcrypt.compare(password, user.password);
-    if (!validPassword) return res.status(401).json({ message: 'Credenciales incorrectas' });
+    if (!validPassword) return res.status(401).json({ success: false, message: 'Credenciales incorrectas' });
 
     const token = jwt.sign({ id: user.id, email: user.email }, process.env.JWT_SECRET, { expiresIn: '1d' });
     const { password: pw, ...userWithoutPassword } = user;
@@ -60,27 +62,36 @@ app.post('/login', async (req, res) => {
     res.json({ success: true, token, user: userWithoutPassword });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ message: 'Error del servidor' });
+    res.status(500).json({ success: false, message: 'Error del servidor' });
   }
 });
 
 // ------------------- FACE API -------------------
-const MODEL_PATH = path.join(__dirname, 'models');
+const FACE_THRESHOLD = parseFloat(process.env.FACE_THRESHOLD) || 0.6;
+const MODEL_PATH = path.join(__dirname, 'models'); // solo usado en local
 
 async function loadFaceModels() {
-  if (process.env.NODE_ENV === 'production') {
-    // 🔹 En Railway: usar CDN
-    const MODEL_URL = 'https://cdn.jsdelivr.net/npm/face-api.js/models';
-    await faceapi.nets.ssdMobilenetv1.loadFromUri(MODEL_URL + '/ssd_mobilenetv1');
-    await faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL + '/face_landmark_68');
-    await faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL + '/face_recognition');
-    console.log('✅ Modelos cargados desde CDN (producción)');
-  } else {
-    // 🔹 En local: cargar desde ./models
-    await faceapi.nets.ssdMobilenetv1.loadFromDisk(path.join(MODEL_PATH, 'ssd_mobilenetv1'));
-    await faceapi.nets.faceLandmark68Net.loadFromDisk(path.join(MODEL_PATH, 'face_landmark_68'));
-    await faceapi.nets.faceRecognitionNet.loadFromDisk(path.join(MODEL_PATH, 'face_recognition'));
-    console.log('✅ Modelos cargados desde carpeta local');
+  try {
+    if (process.env.NODE_ENV === 'production') {
+      // 🚀 Railway -> usar CDN funcional
+      const MODEL_URL = 'https://justadudewhohacks.github.io/face-api.js/models';
+      console.log('🔗 Cargando modelos desde CDN...');
+
+      await faceapi.nets.ssdMobilenetv1.loadFromUri(`${MODEL_URL}/ssd_mobilenetv1_model-weights_manifest.json`);
+      await faceapi.nets.faceLandmark68Net.loadFromUri(`${MODEL_URL}/face_landmark_68_model-weights_manifest.json`);
+      await faceapi.nets.faceRecognitionNet.loadFromUri(`${MODEL_URL}/face_recognition_model-weights_manifest.json`);
+
+      console.log('✅ Modelos cargados desde CDN (producción)');
+    } else {
+      console.log('📂 Cargando modelos desde disco local...');
+      await faceapi.nets.ssdMobilenetv1.loadFromDisk(path.join(MODEL_PATH, 'ssd_mobilenetv1'));
+      await faceapi.nets.faceLandmark68Net.loadFromDisk(path.join(MODEL_PATH, 'face_landmark_68'));
+      await faceapi.nets.faceRecognitionNet.loadFromDisk(path.join(MODEL_PATH, 'face_recognition'));
+      console.log('✅ Modelos cargados desde carpeta local');
+    }
+  } catch (error) {
+    console.error('❌ Error al cargar los modelos:', error);
+    throw error;
   }
 }
 
@@ -89,15 +100,13 @@ async function getFaceDescriptor(input) {
     let img;
 
     if (Buffer.isBuffer(input)) {
-      // Guardar buffer en archivo temporal
-      const tmpPath = path.join(__dirname, 'uploads', `tmp_${Date.now()}.jpg`);
+      const tmpPath = path.join(UPLOAD_DIR, `tmp_${Date.now()}.jpg`);
       fs.writeFileSync(tmpPath, input);
       img = await loadImage(tmpPath);
       await fs.promises.unlink(tmpPath);
     } else if (typeof input === 'string' && input.startsWith('data:')) {
-      const base64 = input.split(',')[1];
-      const buffer = Buffer.from(base64, 'base64');
-      const tmpPath = path.join(__dirname, 'uploads', `tmp_${Date.now()}.jpg`);
+      const buffer = Buffer.from(input.split(',')[1], 'base64');
+      const tmpPath = path.join(UPLOAD_DIR, `tmp_${Date.now()}.jpg`);
       fs.writeFileSync(tmpPath, buffer);
       img = await loadImage(tmpPath);
       await fs.promises.unlink(tmpPath);
@@ -117,6 +126,7 @@ async function getFaceDescriptor(input) {
 // ------------------- Endpoint de verificación -------------------
 app.post('/verify-face', upload.single('photo'), async (req, res) => {
   const { userId } = req.body;
+
   if (!userId) {
     if (req.file) await fs.promises.unlink(req.file.path).catch(() => {});
     return res.status(400).json({ success: false, message: 'userId es requerido' });
@@ -139,12 +149,9 @@ app.post('/verify-face', upload.single('photo'), async (req, res) => {
       return res.status(400).json({ success: false, message: 'Usuario no tiene foto registrada' });
     }
 
-    let dbInput;
-    if (typeof dbPhoto === 'string' && dbPhoto.startsWith('data:')) {
-      dbInput = dbPhoto;
-    } else {
-      dbInput = path.isAbsolute(dbPhoto) ? dbPhoto : path.join(__dirname, dbPhoto);
-    }
+    const dbInput = typeof dbPhoto === 'string' && dbPhoto.startsWith('data:')
+      ? dbPhoto
+      : path.isAbsolute(dbPhoto) ? dbPhoto : path.join(__dirname, dbPhoto);
 
     const uploadedPath = req.file.path;
 
@@ -158,13 +165,13 @@ app.post('/verify-face', upload.single('photo'), async (req, res) => {
     }
 
     const distance = faceapi.euclideanDistance(dbDescriptor, uploadedDescriptor);
-    const THRESHOLD = 0.6;
 
-    if (distance < THRESHOLD) {
+    if (distance < FACE_THRESHOLD) {
       return res.json({ success: true, message: 'Rostro verificado', distance });
     } else {
       return res.status(401).json({ success: false, message: 'No coincide con el rostro registrado', distance });
     }
+
   } catch (error) {
     console.error('Error en /verify-face:', error);
     if (req.file) await fs.promises.unlink(req.file.path).catch(() => {});
@@ -174,9 +181,9 @@ app.post('/verify-face', upload.single('photo'), async (req, res) => {
 
 // ------------------- Iniciar servidor -------------------
 const PORT = process.env.PORT || 3000;
-loadFaceModels().then(() => {
-  app.listen(PORT, () => console.log(`🚀 Servidor corriendo en puerto ${PORT}`));
-}).catch(err => {
-  console.error('❌ No se pudieron cargar los modelos:', err);
-  process.exit(1);
-});
+loadFaceModels()
+  .then(() => app.listen(PORT, () => console.log(`🚀 Servidor corriendo en puerto ${PORT}`)))
+  .catch(err => {
+    console.error('❌ No se pudieron cargar los modelos:', err);
+    process.exit(1);
+  });
