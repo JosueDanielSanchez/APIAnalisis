@@ -3,7 +3,7 @@ const fs = require('fs');
 const path = require('path');
 const fetch = require('node-fetch');
 
-const MODEL_URL = 'https://github.com/justadudewhohacks/face-api.js-models/raw/master';
+const MODEL_URL = 'https://cdn.jsdelivr.net/npm/face-api.js/models';
 
 const models = {
   ssd_mobilenetv1: [
@@ -39,8 +39,12 @@ async function downloadModels() {
       const filePath = path.join(dir, file);
       if (!fs.existsSync(filePath)) {
         console.log(`Descargando ${file}...`);
-        const url = `${MODEL_URL}/${file}`;
-        await downloadFile(url, filePath);
+        const url = `${MODEL_URL}/${modelName}/${file}`;
+        try {
+          await downloadFile(url, filePath);
+        } catch (err) {
+          console.error(`❌ No se pudo descargar ${file}:`, err.message);
+        }
       }
     }
   }

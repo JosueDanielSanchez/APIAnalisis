@@ -4,7 +4,8 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "node index.js",
+    "dev": "nodemon index.js"
   },
   "keywords": [],
   "author": "",
@@ -22,13 +23,5 @@
     "jsonwebtoken": "^9.0.2",
     "multer": "^2.0.2",
     "mysql2": "^3.14.5"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/JosueDanielSanchez/APIAnalisis.git"
-  },
-  "bugs": {
-    "url": "https://github.com/JosueDanielSanchez/APIAnalisis/issues"
-  },
-  "homepage": "https://github.com/JosueDanielSanchez/APIAnalisis#readme"
+  }
 }
