@@ -14,7 +14,7 @@ const multer = require('multer');
 //
 // IMPORTANTE: tfjs-node antes de face-api.js
 //
-require('@tensorflow/tfjs-node');
+require('@tensorflow/tfjs');
 
 const faceapi = require('face-api.js');
 const canvas = require('canvas');
