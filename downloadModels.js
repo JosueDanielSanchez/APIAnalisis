@@ -1,3 +1,4 @@
+// downloadModels.js
 const fs = require('fs');
 const path = require('path');
 const fetch = require('node-fetch');
@@ -21,19 +22,25 @@ const models = {
   ]
 };
 
+async function downloadFile(url, filePath) {
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`Error descargando ${url}: ${res.statusText}`);
+  const buffer = Buffer.from(await res.arrayBuffer());
+  fs.writeFileSync(filePath, buffer);
+  console.log(`✅ ${filePath} descargado`);
+}
+
 async function downloadModels() {
   for (const [modelName, files] of Object.entries(models)) {
-    const dir = path.join('./models', modelName);
+    const dir = path.join(__dirname, 'models', modelName);
     if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
 
     for (const file of files) {
       const filePath = path.join(dir, file);
       if (!fs.existsSync(filePath)) {
-        console.log(`Downloading ${file}...`);
-        const res = await fetch(`${MODEL_URL}/${file}`);
-        if (!res.ok) throw new Error(`Failed to download ${file}`);
-        const buffer = Buffer.from(await res.arrayBuffer());
-        fs.writeFileSync(filePath, buffer);
+        console.log(`Descargando ${file}...`);
+        const url = `${MODEL_URL}/${file}`;
+        await downloadFile(url, filePath);
       }
     }
   }
