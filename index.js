@@ -72,13 +72,14 @@ const MODEL_PATH = path.join(__dirname, 'models'); // solo usado en local
 async function loadFaceModels() {
   try {
     if (process.env.NODE_ENV === 'production') {
-      const MODEL_URL = 'https://justadudewhohacks.github.io/face-api.js/models';
-      console.log('🔗 Cargando modelos desde CDN...');
-      await faceapi.nets.ssdMobilenetv1.loadFromUri(`${MODEL_URL}/ssd_mobilenetv1_model-weights_manifest.json`);
-      await faceapi.nets.faceLandmark68Net.loadFromUri(`${MODEL_URL}/face_landmark_68_model-weights_manifest.json`);
-      await faceapi.nets.faceRecognitionNet.loadFromUri(`${MODEL_URL}/face_recognition_model-weights_manifest.json`);
-      console.log('✅ Modelos cargados desde CDN (producción)');
+      // 🚀 Railway -> cargar desde carpeta models que se descarga con postinstall
+      console.log('📂 Cargando modelos desde disco (Railway)');
+      await faceapi.nets.ssdMobilenetv1.loadFromDisk(path.join(MODEL_PATH, 'ssd_mobilenetv1'));
+      await faceapi.nets.faceLandmark68Net.loadFromDisk(path.join(MODEL_PATH, 'face_landmark_68'));
+      await faceapi.nets.faceRecognitionNet.loadFromDisk(path.join(MODEL_PATH, 'face_recognition'));
+      console.log('✅ Modelos cargados desde disco (producción)');
     } else {
+      // 💻 Desarrollo local
       console.log('📂 Cargando modelos desde disco local...');
       await faceapi.nets.ssdMobilenetv1.loadFromDisk(path.join(MODEL_PATH, 'ssd_mobilenetv1'));
       await faceapi.nets.faceLandmark68Net.loadFromDisk(path.join(MODEL_PATH, 'face_landmark_68'));
@@ -90,6 +91,7 @@ async function loadFaceModels() {
     throw error;
   }
 }
+
 
 // ------------------- Función para cargar imágenes remotas -------------------
 async function loadRemoteImage(url) {

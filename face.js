@@ -11,9 +11,14 @@ export async function getFaceDescriptorFromURL(url) {
         const buffer = await response.arrayBuffer();
         const image = await loadImage(Buffer.from(buffer));
 
-        // Asumiendo que getFaceDescriptor es tu función que recibe un image de canvas
-        const descriptor = await faceapi.computeFaceDescriptor(image); 
-        return descriptor;
+        // 👇 Aquí va tu código de detección y extracción de descriptor
+        const detection = await faceapi
+            .detectSingleFace(image)
+            .withFaceLandmarks()
+            .withFaceDescriptor();
+
+        // Si encontró una cara devuelve el descriptor, si no, null
+        return detection ? detection.descriptor : null;
     } catch (err) {
         console.error('Error en getFaceDescriptorFromURL:', err.message);
         return null;
