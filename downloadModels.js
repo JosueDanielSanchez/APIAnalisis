@@ -57,8 +57,9 @@ export async function downloadModels() {
 }
 
 // Ejecutable directamente con node
-if (import.meta.url === `file://${process.cwd()}/downloadModels.js`) {
+if (process.argv[1] === fileURLToPath(import.meta.url)) {
   downloadModels()
     .then(() => console.log('✅ Todos los modelos descargados'))
     .catch(console.error);
 }
+
