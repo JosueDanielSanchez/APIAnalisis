@@ -150,7 +150,7 @@ app.post('/verify-face', upload.single('photo'), async (req, res) => {
 
     const user = rows[0];
 
-    if (!user.foto) {
+    if (!user.foto_personal || !user.foto) {
       await fs.promises.unlink(req.file.path).catch(() => {});
       return res.status(400).json({ success: false, message: 'Usuario no tiene foto registrada' });
     }
