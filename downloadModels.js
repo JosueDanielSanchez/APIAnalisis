@@ -1,7 +1,7 @@
 // downloadModels.js
 const fs = require('fs');
 const path = require('path');
-const fetch = require('node-fetch');
+import fetch from 'node-fetch';
 
 // CDN funcional de los modelos
 const MODEL_URL = 'https://justadudewhohacks.github.io/face-api.js/models';
