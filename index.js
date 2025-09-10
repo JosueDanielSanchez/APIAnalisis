@@ -1,24 +1,25 @@
 // index.js
 import 'dotenv/config';
-
-const express = require('express');
-const cors = require('cors');
-const bodyParser = require('body-parser');
-const mysql = require('mysql2/promise');
-const bcrypt = require('bcryptjs');
-const jwt = require('jsonwebtoken');
-const path = require('path');
-const fs = require('fs');
-const multer = require('multer');
-const fetch = require('node-fetch'); // descargar imágenes remotas
-
-// IMPORTANTE: tfjs-node antes de face-api.js
-require('@tensorflow/tfjs-node'); // versión Node para acelerar
-
-const faceapi = require('face-api.js');
-const canvas = require('canvas');
+import express from 'express';
+import cors from 'cors';
+import bodyParser from 'body-parser';
+import mysql from 'mysql2/promise';
+import bcrypt from 'bcryptjs';
+import jwt from 'jsonwebtoken';
+import path from 'path';
+import fs from 'fs';
+import multer from 'multer';
+import fetch from 'node-fetch'; // descargar imágenes remotas
+import '@tensorflow/tfjs-node'; // tfjs-node antes de face-api.js
+import faceapi from 'face-api.js';
+import canvas from 'canvas';
 const { Canvas, Image, ImageData, loadImage } = canvas;
 faceapi.env.monkeyPatch({ Canvas, Image, ImageData });
+
+// ESM no tiene __dirname
+import { fileURLToPath } from 'url';
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const app = express();
 app.use(cors());
@@ -39,7 +40,6 @@ const pool = mysql.createPool({
 // ------------------- Multer -------------------
 const UPLOAD_DIR = path.join(__dirname, 'uploads');
 if (!fs.existsSync(UPLOAD_DIR)) fs.mkdirSync(UPLOAD_DIR);
-
 const upload = multer({ dest: UPLOAD_DIR });
 
 // ------------------- Login -------------------
@@ -71,27 +71,16 @@ const MODEL_PATH = path.join(__dirname, 'models'); // solo usado en local
 
 async function loadFaceModels() {
   try {
-    if (process.env.NODE_ENV === 'production') {
-      // 🚀 Railway -> cargar desde carpeta models que se descarga con postinstall
-      console.log('📂 Cargando modelos desde disco (Railway)');
-      await faceapi.nets.ssdMobilenetv1.loadFromDisk(path.join(MODEL_PATH, 'ssd_mobilenetv1'));
-      await faceapi.nets.faceLandmark68Net.loadFromDisk(path.join(MODEL_PATH, 'face_landmark_68'));
-      await faceapi.nets.faceRecognitionNet.loadFromDisk(path.join(MODEL_PATH, 'face_recognition'));
-      console.log('✅ Modelos cargados desde disco (producción)');
-    } else {
-      // 💻 Desarrollo local
-      console.log('📂 Cargando modelos desde disco local...');
-      await faceapi.nets.ssdMobilenetv1.loadFromDisk(path.join(MODEL_PATH, 'ssd_mobilenetv1'));
-      await faceapi.nets.faceLandmark68Net.loadFromDisk(path.join(MODEL_PATH, 'face_landmark_68'));
-      await faceapi.nets.faceRecognitionNet.loadFromDisk(path.join(MODEL_PATH, 'face_recognition'));
-      console.log('✅ Modelos cargados desde carpeta local');
-    }
+    console.log('📂 Cargando modelos desde disco...');
+    await faceapi.nets.ssdMobilenetv1.loadFromDisk(path.join(MODEL_PATH, 'ssd_mobilenetv1'));
+    await faceapi.nets.faceLandmark68Net.loadFromDisk(path.join(MODEL_PATH, 'face_landmark_68'));
+    await faceapi.nets.faceRecognitionNet.loadFromDisk(path.join(MODEL_PATH, 'face_recognition'));
+    console.log('✅ Modelos cargados');
   } catch (error) {
     console.error('❌ Error al cargar los modelos:', error);
     throw error;
   }
 }
-
 
 // ------------------- Función para cargar imágenes remotas -------------------
 async function loadRemoteImage(url) {
@@ -158,7 +147,6 @@ app.post('/verify-face', upload.single('photo'), async (req, res) => {
     }
 
     const uploadedPath = req.file.path;
-    // URL completa de la imagen en Supabase
     const dbImageURL = `https://yruggdjexmsxtepcthos.supabase.co/storage/v1/object/public/users/${user.foto}`;
 
     const dbDescriptor = await getFaceDescriptor(dbImageURL);
