@@ -1,7 +1,12 @@
 // downloadModels.js
-const fs = require('fs');
-const path = require('path');
+import fs from 'fs';
+import path from 'path';
 import fetch from 'node-fetch';
+import { fileURLToPath } from 'url';
+
+// ESM no tiene __dirname
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // CDN funcional de los modelos
 const MODEL_URL = 'https://justadudewhohacks.github.io/face-api.js/models';
@@ -31,7 +36,7 @@ async function downloadFile(url, filePath) {
   console.log(`✅ ${filePath} descargado`);
 }
 
-async function downloadModels() {
+export async function downloadModels() {
   for (const [modelName, files] of Object.entries(models)) {
     const dir = path.join(__dirname, 'models', modelName);
     if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
@@ -51,9 +56,9 @@ async function downloadModels() {
   }
 }
 
-// Para usarlo directamente: node downloadModels.js
-if (require.main === module) {
-  downloadModels().then(() => console.log('✅ Todos los modelos descargados')).catch(console.error);
+// Ejecutable directamente con node
+if (process.argv[1].endsWith('downloadModels.js')) {
+  downloadModels()
+    .then(() => console.log('✅ Todos los modelos descargados'))
+    .catch(console.error);
 }
-
-module.exports = { downloadModels };
