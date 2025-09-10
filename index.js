@@ -1,5 +1,5 @@
 // index.js
-require('dotenv').config();
+import 'dotenv/config';
 
 const express = require('express');
 const cors = require('cors');
