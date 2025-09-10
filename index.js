@@ -10,10 +10,10 @@ const jwt = require('jsonwebtoken');
 const path = require('path');
 const fs = require('fs');
 const multer = require('multer');
-const fetch = require('node-fetch'); // para descargar imágenes remotas
+const fetch = require('node-fetch'); // descargar imágenes remotas
 
 // IMPORTANTE: tfjs-node antes de face-api.js
-require('@tensorflow/tfjs');
+require('@tensorflow/tfjs-node'); // versión Node para acelerar
 
 const faceapi = require('face-api.js');
 const canvas = require('canvas');
@@ -74,11 +74,9 @@ async function loadFaceModels() {
     if (process.env.NODE_ENV === 'production') {
       const MODEL_URL = 'https://justadudewhohacks.github.io/face-api.js/models';
       console.log('🔗 Cargando modelos desde CDN...');
-
       await faceapi.nets.ssdMobilenetv1.loadFromUri(`${MODEL_URL}/ssd_mobilenetv1_model-weights_manifest.json`);
       await faceapi.nets.faceLandmark68Net.loadFromUri(`${MODEL_URL}/face_landmark_68_model-weights_manifest.json`);
       await faceapi.nets.faceRecognitionNet.loadFromUri(`${MODEL_URL}/face_recognition_model-weights_manifest.json`);
-
       console.log('✅ Modelos cargados desde CDN (producción)');
     } else {
       console.log('📂 Cargando modelos desde disco local...');
@@ -151,20 +149,17 @@ app.post('/verify-face', upload.single('photo'), async (req, res) => {
     }
 
     const user = rows[0];
-    const dbPhoto = user.foto;
 
-    if (!dbPhoto) {
+    if (!user.foto) {
       await fs.promises.unlink(req.file.path).catch(() => {});
       return res.status(400).json({ success: false, message: 'Usuario no tiene foto registrada' });
     }
 
-    const dbInput = typeof dbPhoto === 'string' && dbPhoto.startsWith('data:')
-      ? dbPhoto
-      : path.isAbsolute(dbPhoto) ? dbPhoto : path.join(__dirname, dbPhoto);
-
     const uploadedPath = req.file.path;
+    // URL completa de la imagen en Supabase
+    const dbImageURL = `https://yruggdjexmsxtepcthos.supabase.co/storage/v1/object/public/users/${user.foto}`;
 
-    const dbDescriptor = await getFaceDescriptor(dbInput);
+    const dbDescriptor = await getFaceDescriptor(dbImageURL);
     const uploadedDescriptor = await getFaceDescriptor(uploadedPath);
 
     await fs.promises.unlink(uploadedPath).catch(() => {});
@@ -190,8 +185,6 @@ app.post('/verify-face', upload.single('photo'), async (req, res) => {
 
 // ------------------- Iniciar servidor -------------------
 const PORT = process.env.PORT || 3000;
-
-// Levanta servidor inmediatamente
 app.listen(PORT, () => console.log(`🚀 Servidor corriendo en puerto ${PORT}`));
 
 // Carga modelos en segundo plano
