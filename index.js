@@ -10,10 +10,9 @@ const jwt = require('jsonwebtoken');
 const path = require('path');
 const fs = require('fs');
 const multer = require('multer');
+const fetch = require('node-fetch'); // para descargar imágenes remotas
 
-//
 // IMPORTANTE: tfjs-node antes de face-api.js
-//
 require('@tensorflow/tfjs');
 
 const faceapi = require('face-api.js');
@@ -73,7 +72,6 @@ const MODEL_PATH = path.join(__dirname, 'models'); // solo usado en local
 async function loadFaceModels() {
   try {
     if (process.env.NODE_ENV === 'production') {
-      // 🚀 Railway -> usar CDN funcional
       const MODEL_URL = 'https://justadudewhohacks.github.io/face-api.js/models';
       console.log('🔗 Cargando modelos desde CDN...');
 
@@ -95,6 +93,15 @@ async function loadFaceModels() {
   }
 }
 
+// ------------------- Función para cargar imágenes remotas -------------------
+async function loadRemoteImage(url) {
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`Error descargando la imagen: ${res.statusText}`);
+  const buffer = await res.arrayBuffer();
+  return loadImage(Buffer.from(buffer));
+}
+
+// ------------------- Obtener descriptor facial -------------------
 async function getFaceDescriptor(input) {
   try {
     let img;
@@ -110,6 +117,8 @@ async function getFaceDescriptor(input) {
       fs.writeFileSync(tmpPath, buffer);
       img = await loadImage(tmpPath);
       await fs.promises.unlink(tmpPath);
+    } else if (typeof input === 'string' && input.startsWith('http')) {
+      img = await loadRemoteImage(input);
     } else {
       img = await loadImage(input);
     }
@@ -182,10 +191,10 @@ app.post('/verify-face', upload.single('photo'), async (req, res) => {
 // ------------------- Iniciar servidor -------------------
 const PORT = process.env.PORT || 3000;
 
-// 1️⃣ Levanta el servidor de inmediato
+// Levanta servidor inmediatamente
 app.listen(PORT, () => console.log(`🚀 Servidor corriendo en puerto ${PORT}`));
 
-// 2️⃣ Carga los modelos en segundo plano
+// Carga modelos en segundo plano
 loadFaceModels()
   .then(() => console.log('✅ Modelos cargados (segundo plano)'))
   .catch(err => console.error('❌ Error cargando modelos:', err));
