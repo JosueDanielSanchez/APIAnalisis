@@ -150,14 +150,14 @@ app.post('/verify-face', upload.single('photo'), async (req, res) => {
 
     const user = rows[0];
 
-    if (!user.foto_personal && !user.foto) {
+    if (!user.foto) {
       await fs.promises.unlink(req.file.path).catch(() => {});
       return res.status(400).json({ success: false, message: 'Usuario no tiene foto registrada' });
     }
 
     const uploadedPath = req.file.path;
     // URL completa de la imagen en Supabase
-    const dbImageURL = `https://yruggdjexmsxtepcthos.supabase.co/storage/v1/object/public/users/${user.foto_personal}`;
+    const dbImageURL = `https://yruggdjexmsxtepcthos.supabase.co/storage/v1/object/public/users/${user.foto}`;
 
     const dbDescriptor = await getFaceDescriptor(dbImageURL);
     const uploadedDescriptor = await getFaceDescriptor(uploadedPath);
