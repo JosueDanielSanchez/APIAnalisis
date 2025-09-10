@@ -10,7 +10,7 @@ import path from 'path';
 import fs from 'fs';
 import multer from 'multer';
 import fetch from 'node-fetch'; // descargar imágenes remotas
-import '@tensorflow/tfjs-node'; // tfjs-node antes de face-api.js
+import '@tensorflow/tfjs'; // tfjs-node antes de face-api.js
 import faceapi from 'face-api.js';
 import canvas from 'canvas';
 const { Canvas, Image, ImageData, loadImage } = canvas;
