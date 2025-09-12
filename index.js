@@ -71,10 +71,18 @@ const MODEL_PATH = path.join(__dirname, 'models'); // solo usado en local
 
 async function loadFaceModels() {
   try {
-    console.log('📂 Cargando modelos desde disco...');
-    await faceapi.nets.ssdMobilenetv1.loadFromDisk(path.join(MODEL_PATH, 'ssd_mobilenetv1'));
-    await faceapi.nets.faceLandmark68Net.loadFromDisk(path.join(MODEL_PATH, 'face_landmark_68'));
-    await faceapi.nets.faceRecognitionNet.loadFromDisk(path.join(MODEL_PATH, 'face_recognition'));
+    if (process.env.NODE_ENV === 'production') {
+      console.log('🌐 Cargando modelos desde CDN...');
+      const MODEL_URL = 'https://justadudewhohacks.github.io/face-api.js/models';
+      await faceapi.nets.ssdMobilenetv1.loadFromUri(MODEL_URL + '/ssd_mobilenetv1');
+      await faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL + '/face_landmark_68');
+      await faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL + '/face_recognition');
+    } else {
+      console.log('📂 Cargando modelos desde disco...');
+      await faceapi.nets.ssdMobilenetv1.loadFromDisk(path.join(MODEL_PATH, 'ssd_mobilenetv1'));
+      await faceapi.nets.faceLandmark68Net.loadFromDisk(path.join(MODEL_PATH, 'face_landmark_68'));
+      await faceapi.nets.faceRecognitionNet.loadFromDisk(path.join(MODEL_PATH, 'face_recognition'));
+    }
     console.log('✅ Modelos cargados');
   } catch (error) {
     console.error('❌ Error al cargar los modelos:', error);
