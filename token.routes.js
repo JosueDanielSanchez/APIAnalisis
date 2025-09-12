@@ -1,8 +1,11 @@
-const express = require('express');
-const router = express.Router();
-const mysql = require('mysql2/promise');
+import express from 'express';
+import mysql from 'mysql2/promise';
 
-// Creamos la conexión directamente aquí, sin importar ningún archivo externo
+const router = express.Router();
+
+// =====================
+// Conexión a MySQL
+// =====================
 const pool = mysql.createPool({
   host: process.env.DB_HOST,
   port: process.env.DB_PORT,
@@ -27,7 +30,7 @@ router.get('/tokens', async (req, res) => {
         v.codigo AS venta_codigo,
         v.fecha AS venta_fecha,
         p.descripcion AS producto,
-        vp.id AS id_venta_producto,   -- 🔥 ESTE FALTABA
+        vp.id AS id_venta_producto,
         vp.cantidad
       FROM token t
       INNER JOIN ventas v ON v.id = t.id_venta
@@ -77,7 +80,6 @@ router.put('/tokens/:id/aprobar', async (req, res) => {
     res.status(500).json({ message: 'Error al aprobar token' });
   }
 });
-
 
 // =====================
 // Rechazar un token
@@ -134,8 +136,9 @@ router.put('/tokens/:id/cantidad', async (req, res) => {
   }
 });
 
-
-
+// =====================
+// Actualizar la cantidad directamente en venta_productos
+// =====================
 router.put('/venta-productos/:id/cantidad', async (req, res) => {
   const { id } = req.params;
   const { cantidad } = req.body;
@@ -157,5 +160,4 @@ router.put('/venta-productos/:id/cantidad', async (req, res) => {
   }
 });
 
-
-module.exports = router;
+export default router;
