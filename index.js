@@ -74,9 +74,9 @@ async function loadFaceModels() {
     if (process.env.NODE_ENV === 'production') {
       console.log('🌐 Cargando modelos desde CDN...');
       const MODEL_URL = 'https://justadudewhohacks.github.io/face-api.js/models';
-      await faceapi.nets.ssdMobilenetv1.loadFromUri(MODEL_URL + '/ssd_mobilenetv1');
-      await faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL + '/face_landmark_68');
-      await faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL + '/face_recognition');
+      await faceapi.nets.ssdMobilenetv1.loadFromUri(MODEL_URL);
+      await faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL);
+      await faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL);
     } else {
       console.log('📂 Cargando modelos desde disco...');
       await faceapi.nets.ssdMobilenetv1.loadFromDisk(path.join(MODEL_PATH, 'ssd_mobilenetv1'));
@@ -89,6 +89,7 @@ async function loadFaceModels() {
     throw error;
   }
 }
+
 
 // ------------------- Función para cargar imágenes remotas -------------------
 async function loadRemoteImage(url) {
