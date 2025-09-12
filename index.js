@@ -232,10 +232,17 @@ app.use('/api', tokenRoutes);
 
 
 // ------------------- Iniciar servidor -------------------
+import http from 'http';
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`🚀 Servidor corriendo en puerto ${PORT}`));
 
-// Carga modelos en segundo plano
+// Primero cargamos los modelos, luego levantamos el servidor
 loadFaceModels()
-  .then(() => console.log('✅ Modelos cargados (segundo plano)'))
-  .catch(err => console.error('❌ Error cargando modelos:', err));
+  .then(() => {
+    const server = http.createServer(app);
+    server.setTimeout(120000); // 120 segundos de espera antes de cortar
+    server.listen(PORT, () => console.log(`🚀 Servidor corriendo en puerto ${PORT}`));
+  })
+  .catch(err => {
+    console.error('❌ Error cargando modelos:', err);
+    process.exit(1);
+  });
