@@ -20,7 +20,7 @@ try {
   console.log("⚠️ TensorFlow.js en modo genérico (más lento)");
 }
 
-import faceapi from 'face-api.js';
+import * as faceapi from '@vladmandic/face-api';
 import canvas from 'canvas';
 const { Canvas, Image, ImageData, loadImage } = canvas;
 faceapi.env.monkeyPatch({ Canvas, Image, ImageData });
