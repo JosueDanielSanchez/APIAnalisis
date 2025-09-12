@@ -102,8 +102,12 @@ async function loadFaceModels() {
 // ------------------- Función para cargar imágenes remotas -------------------
 async function loadRemoteImage(url) {
   try {
-    const res = await fetch(encodeURI(url));
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    console.log('🔗 Intentando descargar imagen:', url);
+    const res = await fetch(url);
+    if (!res.ok) {
+      console.error(`❌ Error HTTP al descargar la imagen: ${res.status} ${res.statusText}`);
+      return null;
+    }
     const buffer = await res.arrayBuffer();
     return loadImage(Buffer.from(buffer));
   } catch (err) {
@@ -129,9 +133,12 @@ async function getFaceDescriptor(input) {
       img = await loadImage(tmpPath);
       await fs.promises.unlink(tmpPath);
     } else if (typeof input === 'string' && input.startsWith('http')) {
-      img = await loadRemoteImage(input);
-      if (!img) return null;
-    } else {
+    img = await loadRemoteImage(input);
+    if (!img) {
+      console.error('❌ No se pudo cargar la imagen remota');
+      return null; // evita pasar null a face-api.js
+    }
+else {
       img = await loadImage(input);
     }
 
