@@ -233,9 +233,12 @@ app.use('/api', tokenRoutes);
 
 // ------------------- Iniciar servidor -------------------
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`🚀 Servidor corriendo en puerto ${PORT}`));
 
-// Carga modelos en segundo plano
 loadFaceModels()
-  .then(() => console.log('✅ Modelos cargados (segundo plano)'))
-  .catch(err => console.error('❌ Error cargando modelos:', err));
+  .then(() => {
+    app.listen(PORT, () => console.log(`🚀 Servidor corriendo en puerto ${PORT}`));
+  })
+  .catch(err => {
+    console.error('❌ Error cargando modelos:', err);
+    process.exit(1);
+  });
