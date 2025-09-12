@@ -152,23 +152,24 @@ async function getFaceDescriptor(input) {
 }
 
 // ------------------- Endpoint de verificación -------------------
+// ------------------- Endpoint de verificación robusto -------------------
 app.post('/verify-face', upload.single('photo'), async (req, res) => {
   const { userId } = req.body;
 
+  // Validaciones iniciales
   if (!userId) {
     if (req.file) await fs.promises.unlink(req.file.path).catch(() => {});
     return res.status(400).json({ success: false, message: 'userId es requerido' });
   }
-
   if (!req.file) return res.status(400).json({ success: false, message: 'No se subió ninguna foto' });
 
   try {
+    // Obtener usuario
     const [rows] = await pool.query('SELECT * FROM users WHERE id = ?', [userId]);
     if (rows.length === 0) {
       await fs.promises.unlink(req.file.path).catch(() => {});
       return res.status(404).json({ success: false, message: 'Usuario no encontrado' });
     }
-
     const user = rows[0];
 
     if (!user.foto) {
@@ -178,7 +179,7 @@ app.post('/verify-face', upload.single('photo'), async (req, res) => {
 
     const uploadedPath = req.file.path;
 
-    // Verifica si user.foto ya es una URL
+    // Construir URL de la foto de base de datos
     let dbImageURL;
     if (user.foto.startsWith('http')) {
       dbImageURL = encodeURI(user.foto);
@@ -186,16 +187,25 @@ app.post('/verify-face', upload.single('photo'), async (req, res) => {
       dbImageURL = encodeURI(`https://yruggdjexmsxtepcthos.supabase.co/storage/v1/object/public/users/${user.foto}`);
     }
 
+    console.log('📌 Comparando rostros:');
+    console.log('DB image:', dbImageURL);
+    console.log('Uploaded image:', uploadedPath);
+
+    // Obtener descriptores faciales
     const dbDescriptor = await getFaceDescriptor(dbImageURL);
     const uploadedDescriptor = await getFaceDescriptor(uploadedPath);
 
+    // Limpiar archivo subido
     await fs.promises.unlink(uploadedPath).catch(() => {});
 
+    // Validar detección de rostros
     if (!dbDescriptor || !uploadedDescriptor) {
       return res.status(400).json({ success: false, message: 'No se detectó rostro en una de las imágenes' });
     }
 
+    // Comparar distancia euclidiana
     const distance = faceapi.euclideanDistance(dbDescriptor, uploadedDescriptor);
+    console.log('📏 Distancia facial calculada:', distance.toFixed(4));
 
     if (distance < FACE_THRESHOLD) {
       return res.json({ success: true, message: 'Rostro verificado', distance });
@@ -206,9 +216,10 @@ app.post('/verify-face', upload.single('photo'), async (req, res) => {
   } catch (error) {
     console.error('❌ Error en /verify-face:', error);
     if (req.file) await fs.promises.unlink(req.file.path).catch(() => {});
-    res.status(500).json({ success: false, message: 'Error en servidor' });
+    return res.status(500).json({ success: false, message: 'Error en servidor' });
   }
 });
+
 
 // ------------------- Iniciar servidor -------------------
 const PORT = process.env.PORT || 3000;
