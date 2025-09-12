@@ -239,7 +239,7 @@ const PORT = process.env.PORT || 3000;
 loadFaceModels()
   .then(() => {
     const server = http.createServer(app);
-    server.setTimeout(120000); // 120 segundos de espera antes de cortar
+    server.setTimeout(180000); // 120 segundos de espera antes de cortar
     server.listen(PORT, () => console.log(`🚀 Servidor corriendo en puerto ${PORT}`));
   })
   .catch(err => {
