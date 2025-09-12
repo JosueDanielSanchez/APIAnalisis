@@ -227,7 +227,6 @@ app.post('/verify-face', upload.single('photo'), async (req, res) => {
 });
 
 
-
 // ------------------- Iniciar servidor -------------------
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`🚀 Servidor corriendo en puerto ${PORT}`));
