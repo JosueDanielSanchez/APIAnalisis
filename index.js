@@ -170,7 +170,7 @@ app.post('/verify-face', upload.single('photo'), async (req, res) => {
     }
 
     const uploadedPath = req.file.path;
-    const dbImageURL = `https://yruggdjexmsxtepcthos.supabase.co/storage/v1/object/public/users/${user.foto}`;
+const dbImageURL = encodeURI(`https://yruggdjexmsxtepcthos.supabase.co/storage/v1/object/public/users/${user.foto}`);
 
     const dbDescriptor = await getFaceDescriptor(dbImageURL);
     const uploadedDescriptor = await getFaceDescriptor(uploadedPath);
