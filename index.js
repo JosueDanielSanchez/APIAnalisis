@@ -9,12 +9,11 @@ import jwt from 'jsonwebtoken';
 import path from 'path';
 import fs from 'fs';
 import multer from 'multer';
-import fetch from 'node-fetch'; // descargar imágenes remotas
+import fetch from 'node-fetch'; // para descargar imágenes remotas
 
 // ------------------- TensorFlow -------------------
-import '@tensorflow/tfjs'; // fallback siempre disponible
+import '@tensorflow/tfjs';
 try {
-  // Intentar cargar backend nativo si existe
   await import('@tensorflow/tfjs-node');
   console.log("✅ TensorFlow.js con backend nativo (rápido)");
 } catch (err) {
@@ -77,7 +76,7 @@ app.post('/login', async (req, res) => {
 
 // ------------------- FACE API -------------------
 const FACE_THRESHOLD = parseFloat(process.env.FACE_THRESHOLD) || 0.6;
-const MODEL_PATH = path.join(__dirname, 'models'); // solo usado en local
+const MODEL_PATH = path.join(__dirname, 'models');
 
 async function loadFaceModels() {
   try {
@@ -102,10 +101,15 @@ async function loadFaceModels() {
 
 // ------------------- Función para cargar imágenes remotas -------------------
 async function loadRemoteImage(url) {
-  const res = await fetch(url);
-  if (!res.ok) throw new Error(`Error descargando la imagen: ${res.statusText}`);
-  const buffer = await res.arrayBuffer();
-  return loadImage(Buffer.from(buffer));
+  try {
+    const res = await fetch(encodeURI(url));
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const buffer = await res.arrayBuffer();
+    return loadImage(Buffer.from(buffer));
+  } catch (err) {
+    console.error('❌ Error descargando imagen remota:', err.message);
+    return null;
+  }
 }
 
 // ------------------- Obtener descriptor facial -------------------
@@ -126,6 +130,7 @@ async function getFaceDescriptor(input) {
       await fs.promises.unlink(tmpPath);
     } else if (typeof input === 'string' && input.startsWith('http')) {
       img = await loadRemoteImage(input);
+      if (!img) return null;
     } else {
       img = await loadImage(input);
     }
@@ -134,7 +139,7 @@ async function getFaceDescriptor(input) {
     if (!detection) return null;
     return detection.descriptor;
   } catch (err) {
-    console.error('Error en getFaceDescriptor:', err);
+    console.error('❌ Error en getFaceDescriptor:', err.message);
     return null;
   }
 }
@@ -185,7 +190,7 @@ app.post('/verify-face', upload.single('photo'), async (req, res) => {
     }
 
   } catch (error) {
-    console.error('Error en /verify-face:', error);
+    console.error('❌ Error en /verify-face:', error);
     if (req.file) await fs.promises.unlink(req.file.path).catch(() => {});
     res.status(500).json({ success: false, message: 'Error en servidor' });
   }
