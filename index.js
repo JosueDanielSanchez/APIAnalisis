@@ -138,7 +138,7 @@ async function getFaceDescriptor(input) {
       console.error('❌ No se pudo cargar la imagen remota');
       return null; // evita pasar null a face-api.js
     }
-else {
+    } else {
       img = await loadImage(input);
     }
 
