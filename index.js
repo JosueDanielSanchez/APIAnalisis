@@ -10,7 +10,17 @@ import path from 'path';
 import fs from 'fs';
 import multer from 'multer';
 import fetch from 'node-fetch'; // descargar imágenes remotas
-import '@tensorflow/tfjs'; // tfjs-node antes de face-api.js
+
+// ------------------- TensorFlow -------------------
+import '@tensorflow/tfjs'; // fallback siempre disponible
+try {
+  // Intentar cargar backend nativo si existe
+  await import('@tensorflow/tfjs-node');
+  console.log("✅ TensorFlow.js con backend nativo (rápido)");
+} catch (err) {
+  console.log("⚠️ TensorFlow.js en modo genérico (más lento)");
+}
+
 import faceapi from 'face-api.js';
 import canvas from 'canvas';
 const { Canvas, Image, ImageData, loadImage } = canvas;
@@ -89,7 +99,6 @@ async function loadFaceModels() {
     throw error;
   }
 }
-
 
 // ------------------- Función para cargar imágenes remotas -------------------
 async function loadRemoteImage(url) {
