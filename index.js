@@ -108,13 +108,18 @@ async function loadRemoteImage(url) {
       console.error(`❌ Error HTTP al descargar la imagen: ${res.status} ${res.statusText}`);
       return null;
     }
-    const buffer = await res.arrayBuffer();
-    return loadImage(Buffer.from(buffer));
+    const arrayBuffer = await res.arrayBuffer();
+    const tmpPath = path.join(UPLOAD_DIR, `tmp_${Date.now()}.jpg`);
+    fs.writeFileSync(tmpPath, Buffer.from(arrayBuffer));
+    const img = await loadImage(tmpPath);
+    await fs.promises.unlink(tmpPath);
+    return img;
   } catch (err) {
     console.error('❌ Error descargando imagen remota:', err.message);
     return null;
   }
 }
+
 
 // ------------------- Obtener descriptor facial -------------------
 async function getFaceDescriptor(input) {
@@ -152,15 +157,14 @@ async function getFaceDescriptor(input) {
 }
 
 // ------------------- Endpoint de verificación -------------------
-// ------------------- Endpoint de verificación robusto -------------------
 app.post('/verify-face', upload.single('photo'), async (req, res) => {
   const { userId } = req.body;
 
-  // Validaciones iniciales
   if (!userId) {
     if (req.file) await fs.promises.unlink(req.file.path).catch(() => {});
     return res.status(400).json({ success: false, message: 'userId es requerido' });
   }
+
   if (!req.file) return res.status(400).json({ success: false, message: 'No se subió ninguna foto' });
 
   try {
@@ -191,17 +195,19 @@ app.post('/verify-face', upload.single('photo'), async (req, res) => {
     console.log('DB image:', dbImageURL);
     console.log('Uploaded image:', uploadedPath);
 
-    // Obtener descriptores faciales
-    const dbDescriptor = await getFaceDescriptor(dbImageURL);
-    const uploadedDescriptor = await getFaceDescriptor(uploadedPath);
+    // Función para validar que la imagen es cargable
+    const safeGetFaceDescriptor = async (input) => {
+      const descriptor = await getFaceDescriptor(input);
+      if (!descriptor) throw new Error('No se pudo detectar rostro en la imagen');
+      return descriptor;
+    };
+
+    // Obtener descriptores
+    const dbDescriptor = await safeGetFaceDescriptor(dbImageURL);
+    const uploadedDescriptor = await safeGetFaceDescriptor(uploadedPath);
 
     // Limpiar archivo subido
     await fs.promises.unlink(uploadedPath).catch(() => {});
-
-    // Validar detección de rostros
-    if (!dbDescriptor || !uploadedDescriptor) {
-      return res.status(400).json({ success: false, message: 'No se detectó rostro en una de las imágenes' });
-    }
 
     // Comparar distancia euclidiana
     const distance = faceapi.euclideanDistance(dbDescriptor, uploadedDescriptor);
@@ -214,11 +220,12 @@ app.post('/verify-face', upload.single('photo'), async (req, res) => {
     }
 
   } catch (error) {
-    console.error('❌ Error en /verify-face:', error);
+    console.error('❌ Error en /verify-face:', error.message);
     if (req.file) await fs.promises.unlink(req.file.path).catch(() => {});
     return res.status(500).json({ success: false, message: 'Error en servidor' });
   }
 });
+
 
 
 // ------------------- Iniciar servidor -------------------
