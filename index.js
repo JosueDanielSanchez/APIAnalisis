@@ -226,6 +226,10 @@ app.post('/verify-face', upload.single('photo'), async (req, res) => {
   }
 });
 
+// ------------------- Rutas de Tokens -------------------
+import tokenRoutes from './token.routes.js';
+app.use('/api', tokenRoutes);
+
 
 // ------------------- Iniciar servidor -------------------
 const PORT = process.env.PORT || 3000;
