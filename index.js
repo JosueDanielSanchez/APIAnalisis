@@ -176,21 +176,19 @@ app.post('/verify-face', upload.single('photo'), async (req, res) => {
     }
     const user = rows[0];
 
-    // Rechazar solo si NO hay ninguna
-    if (!user.foto_personal && !user.foto) {
-      if (req.file) await fs.promises.unlink(req.file.path).catch(() => {});
+    if (!user.foto) {
+      await fs.promises.unlink(req.file.path).catch(() => {});
       return res.status(400).json({ success: false, message: 'Usuario no tiene foto registrada' });
     }
 
-    // Prioridad a foto_personal; fallback a foto
-    const keyOrUrl = user.foto_personal || user.foto;
+    const uploadedPath = req.file.path;
 
-    // Si guardas URL completa, úsala tal cual; si guardas solo la "key", arma la URL
+    // Construir URL de la foto de base de datos
     let dbImageURL;
-    if (typeof keyOrUrl === 'string' && /^https?:\/\//i.test(keyOrUrl)) {
-      dbImageURL = encodeURI(keyOrUrl);
+    if (user.foto.startsWith('http')) {
+      dbImageURL = encodeURI(user.foto);
     } else {
-      dbImageURL = encodeURI(`https://yruggdjexmsxtepcthos.supabase.co/storage/v1/object/public/users/${keyOrUrl}`);
+      dbImageURL = encodeURI(`https://yruggdjexmsxtepcthos.supabase.co/storage/v1/object/public/users/${user.foto}`);
     }
 
     console.log(' Comparando rostros:');
