@@ -15,9 +15,9 @@ import fetch from 'node-fetch'; // para descargar imágenes remotas
 import '@tensorflow/tfjs';
 try {
   await import('@tensorflow/tfjs-node');
-  console.log("✅ TensorFlow.js con backend nativo (rápido)");
+  console.log(" TensorFlow.js con backend nativo (rápido)");
 } catch (err) {
-  console.log("⚠️ TensorFlow.js en modo genérico (más lento)");
+  console.log(" TensorFlow.js en modo genérico (más lento)");
 }
 
 import * as faceapi from '@vladmandic/face-api';
@@ -81,20 +81,20 @@ const MODEL_PATH = path.join(__dirname, 'models');
 async function loadFaceModels() {
   try {
     if (process.env.NODE_ENV === 'production') {
-      console.log('🌐 Cargando modelos desde CDN...');
+      console.log(' Cargando modelos desde CDN...');
       const MODEL_URL = 'https://justadudewhohacks.github.io/face-api.js/models';
       await faceapi.nets.ssdMobilenetv1.loadFromUri(MODEL_URL);
       await faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL);
       await faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL);
     } else {
-      console.log('📂 Cargando modelos desde disco...');
+      console.log(' Cargando modelos desde disco...');
       await faceapi.nets.ssdMobilenetv1.loadFromDisk(path.join(MODEL_PATH, 'ssd_mobilenetv1'));
       await faceapi.nets.faceLandmark68Net.loadFromDisk(path.join(MODEL_PATH, 'face_landmark_68'));
       await faceapi.nets.faceRecognitionNet.loadFromDisk(path.join(MODEL_PATH, 'face_recognition'));
     }
-    console.log('✅ Modelos cargados');
+    console.log(' Modelos cargados');
   } catch (error) {
-    console.error('❌ Error al cargar los modelos:', error);
+    console.error(' Error al cargar los modelos:', error);
     throw error;
   }
 }
@@ -102,10 +102,10 @@ async function loadFaceModels() {
 // ------------------- Función para cargar imágenes remotas -------------------
 async function loadRemoteImage(url) {
   try {
-    console.log('🔗 Intentando descargar imagen:', url);
+    console.log(' Intentando descargar imagen:', url);
     const res = await fetch(url);
     if (!res.ok) {
-      console.error(`❌ Error HTTP al descargar la imagen: ${res.status} ${res.statusText}`);
+      console.error(` Error HTTP al descargar la imagen: ${res.status} ${res.statusText}`);
       return null;
     }
     const arrayBuffer = await res.arrayBuffer();
@@ -115,7 +115,7 @@ async function loadRemoteImage(url) {
     await fs.promises.unlink(tmpPath);
     return img;
   } catch (err) {
-    console.error('❌ Error descargando imagen remota:', err.message);
+    console.error(' Error descargando imagen remota:', err.message);
     return null;
   }
 }
@@ -140,7 +140,7 @@ async function getFaceDescriptor(input) {
     } else if (typeof input === 'string' && input.startsWith('http')) {
     img = await loadRemoteImage(input);
     if (!img) {
-      console.error('❌ No se pudo cargar la imagen remota');
+      console.error(' No se pudo cargar la imagen remota');
       return null; // evita pasar null a face-api.js
     }
     } else {
@@ -151,7 +151,7 @@ async function getFaceDescriptor(input) {
     if (!detection) return null;
     return detection.descriptor;
   } catch (err) {
-    console.error('❌ Error en getFaceDescriptor:', err.message);
+    console.error(' Error en getFaceDescriptor:', err.message);
     return null;
   }
 }
@@ -191,7 +191,7 @@ app.post('/verify-face', upload.single('photo'), async (req, res) => {
       dbImageURL = encodeURI(`https://yruggdjexmsxtepcthos.supabase.co/storage/v1/object/public/users/${user.foto}`);
     }
 
-    console.log('📌 Comparando rostros:');
+    console.log(' Comparando rostros:');
     console.log('DB image:', dbImageURL);
     console.log('Uploaded image:', uploadedPath);
 
@@ -211,7 +211,7 @@ app.post('/verify-face', upload.single('photo'), async (req, res) => {
 
     // Comparar distancia euclidiana
     const distance = faceapi.euclideanDistance(dbDescriptor, uploadedDescriptor);
-    console.log('📏 Distancia facial calculada:', distance.toFixed(4));
+    console.log(' Distancia facial calculada:', distance.toFixed(4));
 
     if (distance < FACE_THRESHOLD) {
       return res.json({ success: true, message: 'Rostro verificado', distance });
@@ -220,7 +220,7 @@ app.post('/verify-face', upload.single('photo'), async (req, res) => {
     }
 
   } catch (error) {
-    console.error('❌ Error en /verify-face:', error.message);
+    console.error(' Error en /verify-face:', error.message);
     if (req.file) await fs.promises.unlink(req.file.path).catch(() => {});
     return res.status(500).json({ success: false, message: 'Error en servidor' });
   }
@@ -240,9 +240,9 @@ loadFaceModels()
   .then(() => {
     const server = http.createServer(app);
     server.setTimeout(180000); // 120 segundos de espera antes de cortar
-    server.listen(PORT, () => console.log(`🚀 Servidor corriendo en puerto ${PORT}`));
+    server.listen(PORT, () => console.log(` Servidor corriendo en puerto ${PORT}`));
   })
   .catch(err => {
-    console.error('❌ Error cargando modelos:', err);
+    console.error(' Error cargando modelos:', err);
     process.exit(1);
   });

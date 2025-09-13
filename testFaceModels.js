@@ -14,15 +14,15 @@ async function test() {
       await faceapi.nets.ssdMobilenetv1.loadFromUri(MODEL_URL + '/ssd_mobilenetv1');
       await faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL + '/face_landmark_68');
       await faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL + '/face_recognition');
-      console.log('✅ Modelos cargados desde CDN (producción)');
+      console.log(' Modelos cargados desde CDN (producción)');
     } else {
       await faceapi.nets.ssdMobilenetv1.loadFromDisk(path.join(MODEL_PATH, 'ssd_mobilenetv1'));
       await faceapi.nets.faceLandmark68Net.loadFromDisk(path.join(MODEL_PATH, 'face_landmark_68'));
       await faceapi.nets.faceRecognitionNet.loadFromDisk(path.join(MODEL_PATH, 'face_recognition'));
-      console.log('✅ Modelos cargados desde carpeta local');
+      console.log(' Modelos cargados desde carpeta local');
     }
   } catch (err) {
-    console.error('❌ Error al cargar modelos:', err);
+    console.error(' Error al cargar modelos:', err);
   }
 }
 

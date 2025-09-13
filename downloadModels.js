@@ -33,7 +33,7 @@ async function downloadFile(url, filePath) {
   if (!res.ok) throw new Error(`Error descargando ${url}: ${res.statusText}`);
   const buffer = Buffer.from(await res.arrayBuffer());
   fs.writeFileSync(filePath, buffer);
-  console.log(`✅ ${filePath} descargado`);
+  console.log(` ${filePath} descargado`);
 }
 
 export async function downloadModels() {
@@ -49,7 +49,7 @@ export async function downloadModels() {
         try {
           await downloadFile(url, filePath);
         } catch (err) {
-          console.error(`❌ No se pudo descargar ${file}:`, err.message);
+          console.error(` No se pudo descargar ${file}:`, err.message);
         }
       }
     }
