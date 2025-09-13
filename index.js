@@ -120,7 +120,6 @@ async function loadRemoteImage(url) {
   }
 }
 
-
 // ------------------- Obtener descriptor facial -------------------
 async function getFaceDescriptor(input) {
   try {
@@ -138,11 +137,11 @@ async function getFaceDescriptor(input) {
       img = await loadImage(tmpPath);
       await fs.promises.unlink(tmpPath);
     } else if (typeof input === 'string' && input.startsWith('http')) {
-    img = await loadRemoteImage(input);
-    if (!img) {
-      console.error(' No se pudo cargar la imagen remota');
-      return null; // evita pasar null a face-api.js
-    }
+      img = await loadRemoteImage(input);
+      if (!img) {
+        console.error(' No se pudo cargar la imagen remota');
+        return null;
+      }
     } else {
       img = await loadImage(input);
     }
@@ -181,6 +180,7 @@ app.post('/verify-face', upload.single('photo'), async (req, res) => {
       return res.status(400).json({ success: false, message: 'Usuario no tiene foto registrada' });
     }
 
+    // 📌 Definir antes de usar en console.log
     const uploadedPath = req.file.path;
 
     // Construir URL de la foto de base de datos
@@ -195,21 +195,17 @@ app.post('/verify-face', upload.single('photo'), async (req, res) => {
     console.log('DB image:', dbImageURL);
     console.log('Uploaded image:', uploadedPath);
 
-    // Función para validar que la imagen es cargable
     const safeGetFaceDescriptor = async (input) => {
       const descriptor = await getFaceDescriptor(input);
       if (!descriptor) throw new Error('No se pudo detectar rostro en la imagen');
       return descriptor;
     };
 
-    // Obtener descriptores
     const dbDescriptor = await safeGetFaceDescriptor(dbImageURL);
     const uploadedDescriptor = await safeGetFaceDescriptor(uploadedPath);
 
-    // Limpiar archivo subido
     await fs.promises.unlink(uploadedPath).catch(() => {});
 
-    // Comparar distancia euclidiana
     const distance = faceapi.euclideanDistance(dbDescriptor, uploadedDescriptor);
     console.log(' Distancia facial calculada:', distance.toFixed(4));
 
@@ -218,7 +214,6 @@ app.post('/verify-face', upload.single('photo'), async (req, res) => {
     } else {
       return res.status(401).json({ success: false, message: 'No coincide con el rostro registrado', distance });
     }
-
   } catch (error) {
     console.error(' Error en /verify-face:', error.message);
     if (req.file) await fs.promises.unlink(req.file.path).catch(() => {});
@@ -230,16 +225,14 @@ app.post('/verify-face', upload.single('photo'), async (req, res) => {
 import tokenRoutes from './token.routes.js';
 app.use('/api', tokenRoutes);
 
-
 // ------------------- Iniciar servidor -------------------
 import http from 'http';
 const PORT = process.env.PORT || 3000;
 
-// Primero cargamos los modelos, luego levantamos el servidor
 loadFaceModels()
   .then(() => {
     const server = http.createServer(app);
-    server.setTimeout(180000); // 120 segundos de espera antes de cortar
+    server.setTimeout(180000);
     server.listen(PORT, () => console.log(` Servidor corriendo en puerto ${PORT}`));
   })
   .catch(err => {
