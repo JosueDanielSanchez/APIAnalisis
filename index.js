@@ -34,6 +34,8 @@ const app = express();
 app.use(cors());
 app.use(bodyParser.json());
 
+import makeStatsRouter from './routes/stats.js';
+
 // ------------------- MySQL -------------------
 const pool = mysql.createPool({
   host: process.env.DB_HOST,
@@ -45,6 +47,8 @@ const pool = mysql.createPool({
   connectionLimit: 10,
   queueLimit: 0
 });
+
+app.use('/api/stats', makeStatsRouter(pool));
 
 // ------------------- Multer -------------------
 const UPLOAD_DIR = path.join(__dirname, 'uploads');
